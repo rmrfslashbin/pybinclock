@@ -16,7 +16,8 @@ ct = CurrentTime()
 try:
     while True:
         ct.update()
-        # print(ct.now)
+        print(ct.now)
+
         row = 0
         for i in [
             ct.binary['year'],
@@ -27,19 +28,21 @@ try:
             ct.binary['second']
         ]:
             lastLED = 0
+            print(i)
+            i.reverse()
             for led in range(len(i)):
                 if i[led] == 1:
-                    hue = (time() / 10.0)
-                    field[row][led] = [int(c * 255)
-                                       for c in hsv_to_rgb(hue, 1.0, 1.0)]
+                    # hue = (time() / 10.0)
+                    # [int(c * 255) for c in hsv_to_rgb(hue, 1.0, 1.0)]
+                    field[row][led] = [255, 0, 0]
                 else:
                     field[row][led] = (0, 0, 0)
-                unicornhatmini.set_pixel(led + len(i), row, *field[row][led])
-                #print(row, 16 - led, *field[row][led])
+                unicornhatmini.set_pixel(16 - led, row, *field[row][led])
                 lastLED = led
-            #unicornhatmini.set_pixel(lastLED + 1, row, 255, 255, 255)
+            # unicornhatmini.set_pixel(lastLED + 1, row, 255, 255, 255)
             row = row + 1
         unicornhatmini.show()
         sleep(1)
+        print()
 except KeyboardInterrupt:
     raise SystemExit
