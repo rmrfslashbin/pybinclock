@@ -6,9 +6,14 @@ authors = ["Robert Sigler <sigler@improvisedscience.org>"]
 
 [tool.poetry.dependencies]
 python = "^3.9"
+unicornhatmini = "^0.0.2"
+"RPi.GPIO" = "^0.7.1"
 
 [tool.poetry.dev-dependencies]
 pytest = "^6.2"
+autopep8 = "^1.7.0"
+
+[tool.poetry.group.dev.dependencies]
 autopep8 = "^1.7.0"
 
 [build-system]
