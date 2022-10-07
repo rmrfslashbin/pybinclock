@@ -8,6 +8,7 @@ authors = ["Robert Sigler <sigler@improvisedscience.org>"]
 python = "^3.9"
 unicornhatmini = "^0.0.2"
 "RPi.GPIO" = "^0.7.1"
+loguru = "^0.6.0"
 
 [tool.poetry.dev-dependencies]
 pytest = "^6.2"
