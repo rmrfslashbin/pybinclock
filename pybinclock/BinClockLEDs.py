@@ -13,7 +13,7 @@ class LEDController:
     def __enter__(self):
         return self
 
-    def __exit__(self, exc_type, exc_value, traceback):
+    def __exit__(self, exc_type, exc_value, traceback) -> None:
         self.hat.clear()
         self.hat.show()
         self.button_a.close()
