@@ -3,6 +3,7 @@
 from colorsys import hsv_to_rgb
 from gpiozero import Button
 from unicornhatmini import UnicornHATMini
+from PIL import Image, ImageDraw, ImageFont
 from time import sleep, time
 from loguru import logger
 from pybinclock.PyBinClock import CurrentTime
@@ -38,12 +39,17 @@ class LEDController:
         self.button_y = Button(24)
 
         self.button_a.when_pressed = self.togglePause
+        self.button_b.when_pressed = self.toggleMode
+        self.button_x.when_pressed = self.setExit
 
         self.paused = False
+        self.mode = 'binclock'
+        self.exit = False
 
         self.status = {}
         self.status['okay'] = [0, 6, self.INFO]  # x, y, [r, g, b]
         self.status['paused'] = [1, 6, self.OKAY]  # x, y, [r, g, b]
+        self.status['mode'] = [2, 6, self.OKAY]  # x, y, [r, g, b]
 
         self.reset()
 
@@ -57,11 +63,16 @@ class LEDController:
 
     def setStatus(self, status: str, color: list) -> None:
         if status == 'okay':
+            #logger.info('setting okay')
             self.status['okay'] = [0, 6, color]  # x, y, [r, g, b]
 
         if status == 'paused':
-            logger.info('Setting paused')
+            #logger.info('setting paused')
             self.status['paused'] = [1, 6, color]
+
+        if status == 'mode':
+            #logger.info('setting mode')
+            self.status['mode'] = [2, 6, color]
 
         self.draw()
 
@@ -80,16 +91,62 @@ class LEDController:
         self.paused = not self.paused
 
         if self.paused:
-            logger.info('Paused')
+            logger.info('paused')
             self.setStatus('paused', self.ERROR)
         else:
-            logger.info('Unpaused')
+            logger.info('unpaused')
             self.setStatus('paused', self.OKAY)
+
+    def toggleMode(self) -> None:
+        if self.mode == 'binclock':
+            logger.info('setting mode to scrollclock')
+            self.mode = 'scrollclock'
+            self.setStatus('mode', self.INFO)
+        else:
+            logger.info('setting mode to binclock')
+            self.mode = 'binclock'
+            self.setStatus('mode', self.WARN)
+
+    def setExit(self) -> None:
+        self.exit = True
+
+    def writeExit(self) -> None:
+        self.writeText('Shuting down!', self.OKAY)
+
+    def writeText(self, text: str, color: list) -> None:
+        logger.info('writing text: {}'.format(text))
+        font = ImageFont.truetype("5x7.ttf", 8)
+        text_width, text_height = font.getsize(text)
+        image = Image.new(
+            'P', (text_width + self.width + self.width, self.height), 0)
+        draw = ImageDraw.Draw(image)
+        draw.text((self.width, -1), text, font=font, fill=255)
+
+        offset_x = 0
+
+        while True:
+            for y in range(self.height):
+                for x in range(self.width):
+                    if image.getpixel((x + offset_x, y)) == 255:
+                        self.hat.set_pixel(x, y, *color)
+                    else:
+                        self.hat.set_pixel(x, y, 0, 0, 0)
+
+            offset_x += 1
+            if offset_x + self.width > image.size[0]:
+                break
+                #offset_x = 0
+            if self.mode == 'binclock':
+                break
+
+            if not self.paused:
+                self.hat.show()
+                sleep(0.05)
 
 
 @logger.catch
 def BinClockLEDs():
-    logger.info("Starting BinClockLEDs")
+    logger.info("starting BinClockLEDs")
 
     leds = LEDController(rotation=180)
 
@@ -100,8 +157,21 @@ def BinClockLEDs():
     try:
         # loop forever
         while True:
+            # check if we should exit
+            if leds.exit:
+                logger.info('button x pushed - exiting')
+                leds.writeExit()
+                break
+
             if leds.paused:
                 continue
+
+            if leds.mode == 'scrollclock':
+                leds.writeText(ct.now.replace(
+                    microsecond=0).isoformat(), leds.OKAY)
+                sleep(1)
+                continue
+
             # Update the current time
             ct.update()
             # print(ct.now)
@@ -149,7 +219,7 @@ def BinClockLEDs():
             sleep(1)
             # print()
     except KeyboardInterrupt:
-        logger.info("Exiting BinClockLEDs")
+        logger.info("exiting BinClockLEDs")
         raise SystemExit
 
 
