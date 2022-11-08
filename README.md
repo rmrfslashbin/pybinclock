@@ -33,8 +33,8 @@ python pybinclock/BinClockLEDs
 ## Buttons!
 Yeah, the buttons do stuff!
 - Button A: Pause the clock, count the dots, do the math, and figure out what time it was when the button was pushed. Push the button again to resume.
-- Button B: Mode toggle. Tired of counting binary bits? Push this button and get a scrolling ISO
-- self.button_x.when_pressed = self.setExit
+- Button B: Mode toggle. Tired of counting binary bits? Push this button and get a scrolling ISO 8610 date & time.
+- Button X: raise SystemExit.
 
 ## Feedback and Issues
 I'm happy to review issues posts or PRs to fix issue or add features. However, this is a side project I work on when I need a break form the daily grind. I'm often distracted or sidetracked. This code does not follow any particular best practices or standards. It may or may not work on first try. YMMV.
