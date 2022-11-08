@@ -2,9 +2,9 @@
 Binary clock for Raspberry Pi with Unicorn Mini HAT
 
 ## What?
-This LED binary clock displays the date and time (in local 24-hour time. Top row is the year, next the month, then day, 
-followed by hour, minute and second. This code requires a Raspberry Pi equipped with a 
-[Unicorn Mini HAT](https://shop.pimoroni.com/products/unicorn-hat-mini). Set that up (rtfm and such), run the examples, 
+The LED binary clock displays the date and time (local, 24-hour clock). The top row is the year, next the month, then day, 
+followed by hours, minutes, and seconds. The code requires a Raspberry Pi equipped with a 
+[Unicorn Mini HAT](https://shop.pimoroni.com/products/unicorn-hat-mini). Set up the rpi and the HAT (rtfm and such), run the examples, 
 and then continue setting up this repo.
 
 ## Why?
@@ -35,3 +35,6 @@ Yeah, the buttons do stuff!
 - Button A: Pause the clock, count the dots, do the math, and figure out what time it was when the button was pushed. Push the button again to resume.
 - Button B: Mode toggle. Tired of counting binary bits? Push this button and get a scrolling ISO
 - self.button_x.when_pressed = self.setExit
+
+## Feedback and Issues
+I'm happy to review issues posts or PRs to fix issue or add features. However, this is a side project I work on when I need a break form the daily grind. I'm often distracted or sidetracked. This code does not follow any particular best practices or standards. It may or may not work on first try. YMMV.
