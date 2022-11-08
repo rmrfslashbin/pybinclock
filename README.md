@@ -30,7 +30,7 @@ If not using Poetry, do something like
 python pybinclock/BinClockLEDs
 ```
 
-##Buttons!
+## Buttons!
 Yeah, the buttons do stuff!
 - Button A: Pause the clock, count the dots, do the math, and figure out what time it was when the button was pushed. Push the button again to resume.
 - Button B: Mode toggle. Tired of counting binary bits? Push this button and get a scrolling ISO
