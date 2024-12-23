@@ -20,6 +20,8 @@ git clone https://github.com/rmrfslashbin/pybinclock.git
 Set up the Python environement and fetch dependencies. This project uses [Poetry](https://python-poetry.org), but also 
 provides `requirements.txt` for generic env set ups.
 
+Set an env var `export GPIOZERO_PIN_FACTORY=lgpio` to force use of `lpgio`.
+
 ## Run!
 The binary clock can be run via Poetry, from the root of the project directory.
 ```

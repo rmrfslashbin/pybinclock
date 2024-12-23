@@ -116,7 +116,8 @@ class LEDController:
     def writeText(self, text: str, color: list) -> None:
         logger.info('writing text: {}'.format(text))
         font = ImageFont.truetype("5x7.ttf", 8)
-        text_width, text_height = font.getsize(text)
+        left, top, right, bottom = font.getbbox(text)
+        text_width, text_height = right - left, bottom - top
         image = Image.new(
             'P', (text_width + self.width + self.width, self.height), 0)
         draw = ImageDraw.Draw(image)
