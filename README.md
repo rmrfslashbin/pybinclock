@@ -17,17 +17,16 @@ First, clone the repo
 git clone https://github.com/rmrfslashbin/pybinclock.git
 ```
 
-Set up the Python environement and fetch dependencies. This project uses [Poetry](https://python-poetry.org), but also 
-provides `requirements.txt` for generic env set ups.
+Set up the Python environement and fetch dependencies. This project uses [uv](https://github.com/astral-sh/uv) for fast Python package management.
 
 Set an env var `export GPIOZERO_PIN_FACTORY=lgpio` to force use of `lpgio`.
 
 ## Run!
-The binary clock can be run via Poetry, from the root of the project directory.
+The binary clock can be run via uv, from the root of the project directory.
 ```
-poetry run BinClockLEDs
+uv run BinClockLEDs
 ```
-If not using Poetry, do something like
+Or without uv:
 ```
 python pybinclock/BinClockLEDs
 ```
