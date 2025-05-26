@@ -11,70 +11,71 @@ and then continue setting up this repo.
 Everyone needs a hobby and coding random things is my hobby. I also find coding to be a nice distraction from daily 
 stresses. And, binary clocks are just cool.
 
-## How?
-First, clone the repo 
-```
-git clone https://github.com/rmrfslashbin/pybinclock.git
-```
+## Installation
 
-Set up the Python environement and fetch dependencies. This project uses [uv](https://github.com/astral-sh/uv) for fast Python package management.
+### System Installation (Recommended)
+Install PyBinClock system-wide to `/usr/local` with automatic startup:
 
-Set an env var `export GPIOZERO_PIN_FACTORY=lgpio` to force use of `lpgio`.
-
-## Run!
-The binary clock can be run via uv, from the root of the project directory.
-```
-uv run BinClockLEDs
-```
-Or without uv:
-```
-python pybinclock/BinClockLEDs
-```
-
-## Running as a Daemon (Auto-start on Boot)
-To run PyBinClock automatically when your Raspberry Pi boots up, you can install it as a systemd daemon.
-
-### Installation
-From the project directory, run the installation script:
 ```bash
-./install-daemon.sh
+git clone https://github.com/rmrfslashbin/pybinclock.git
+cd pybinclock
+./setup.sh
 ```
 
 This will:
-- Install the systemd service file
-- Configure it for your user and project location
-- Enable the service to start on boot
+- Install the application to `/usr/local/lib/pybinclock`
+- Create executable scripts in `/usr/local/bin`
+- Set up systemd service for auto-start on boot
+- Configure proper GPIO permissions
 
-### Daemon Control Commands
-Once installed, you can control the daemon with these commands:
+### Manual Development Setup
+For development or manual running:
 
-**Start the daemon:**
 ```bash
-sudo systemctl start pybinclock
+git clone https://github.com/rmrfslashbin/pybinclock.git
+cd pybinclock
+uv sync
 ```
 
-**Stop the daemon:**
+### Uninstallation
+To remove the system installation:
 ```bash
-sudo systemctl stop pybinclock
+./uninstall.sh
 ```
 
-**Check daemon status:**
+## Usage
+
+### Running the Clock
+After system installation:
 ```bash
+# Test manually
+pybinclock-test
+
+# Service is automatically started and enabled on boot
 sudo systemctl status pybinclock
 ```
 
-**View daemon logs:**
+For development setup:
 ```bash
+uv run BinClockLEDs
+```
+
+### Service Management
+Control the PyBinClock service:
+
+```bash
+# Check status
+sudo systemctl status pybinclock
+
+# Start/stop service
+sudo systemctl start pybinclock
+sudo systemctl stop pybinclock
+
+# View logs
 sudo journalctl -u pybinclock -f
-```
 
-**Disable auto-start on boot:**
-```bash
+# Disable/enable auto-start
 sudo systemctl disable pybinclock
-```
-
-**Re-enable auto-start on boot:**
-```bash
 sudo systemctl enable pybinclock
 ```
 

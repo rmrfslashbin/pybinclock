@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+import signal
+import sys
 from colorsys import hsv_to_rgb
 from gpiozero import Button
 from unicornhatmini import UnicornHATMini
@@ -115,7 +117,7 @@ class LEDController:
 
     def writeText(self, text: str, color: list) -> None:
         logger.info('writing text: {}'.format(text))
-        font = ImageFont.truetype("5x7.ttf", 8)
+        font = ImageFont.truetype("/usr/local/lib/pybinclock/5x7.ttf", 8)
         left, top, right, bottom = font.getbbox(text)
         text_width, text_height = right - left, bottom - top
         image = Image.new(
@@ -145,9 +147,28 @@ class LEDController:
                 sleep(0.05)
 
 
+def signal_handler(signum, frame):
+    """Handle shutdown signals gracefully"""
+    logger.info(f"Received signal {signum}, shutting down gracefully...")
+    global leds
+    if 'leds' in globals():
+        leds.hat.clear()
+        leds.hat.show()
+        leds.button_a.close()
+        leds.button_b.close()
+        leds.button_x.close()
+        leds.button_y.close()
+    sys.exit(0)
+
 @logger.catch
 def BinClockLEDs():
     logger.info("starting BinClockLEDs")
+    
+    global leds
+    
+    # Set up signal handlers for graceful shutdown
+    signal.signal(signal.SIGTERM, signal_handler)
+    signal.signal(signal.SIGINT, signal_handler)
 
     leds = LEDController(rotation=180)
 
@@ -221,7 +242,15 @@ def BinClockLEDs():
             # print()
     except KeyboardInterrupt:
         logger.info("exiting BinClockLEDs")
+        leds.hat.clear()
+        leds.hat.show()
         raise SystemExit
+    finally:
+        # Ensure LEDs are cleared on exit
+        logger.info("cleaning up LEDs")
+        if 'leds' in locals():
+            leds.hat.clear()
+            leds.hat.show()
 
 
 if __name__ == '__main__':
