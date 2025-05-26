@@ -5,11 +5,11 @@ Wants=network.target
 
 [Service]
 Type=simple
-User=pi
-Group=pi
-WorkingDirectory=/home/pi/pybinclock
-Environment=PATH=/home/pi/pybinclock/.venv/bin
-ExecStart=/home/pi/pybinclock/.venv/bin/python -m pybinclock.PyBinClock
+User=rmrfslashbin
+Group=rmrfslashbin
+WorkingDirectory=/home/rmrfslashbin/pybinclock
+Environment=PATH=/usr/bin:/bin
+ExecStart=/home/rmrfslashbin/.local/bin/uv run python -c 'from pybinclock.BinClockLEDs import BinClockLEDs; BinClockLEDs()'
 Restart=always
 RestartSec=5
 
