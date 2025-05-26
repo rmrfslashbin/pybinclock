@@ -31,6 +31,53 @@ Or without uv:
 python pybinclock/BinClockLEDs
 ```
 
+## Running as a Daemon (Auto-start on Boot)
+To run PyBinClock automatically when your Raspberry Pi boots up, you can install it as a systemd daemon.
+
+### Installation
+From the project directory, run the installation script:
+```bash
+./install-daemon.sh
+```
+
+This will:
+- Install the systemd service file
+- Configure it for your user and project location
+- Enable the service to start on boot
+
+### Daemon Control Commands
+Once installed, you can control the daemon with these commands:
+
+**Start the daemon:**
+```bash
+sudo systemctl start pybinclock
+```
+
+**Stop the daemon:**
+```bash
+sudo systemctl stop pybinclock
+```
+
+**Check daemon status:**
+```bash
+sudo systemctl status pybinclock
+```
+
+**View daemon logs:**
+```bash
+sudo journalctl -u pybinclock -f
+```
+
+**Disable auto-start on boot:**
+```bash
+sudo systemctl disable pybinclock
+```
+
+**Re-enable auto-start on boot:**
+```bash
+sudo systemctl enable pybinclock
+```
+
 ## Buttons!
 Yeah, the buttons do stuff!
 - Button A: Pause the clock, count the dots, do the math, and figure out what time it was when the button was pushed. Push the button again to resume.

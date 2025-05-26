@@ -1,0 +1,17 @@
+[Unit]
+Description=PyBinClock Binary Clock Display
+After=network.target
+Wants=network.target
+
+[Service]
+Type=simple
+User=pi
+Group=pi
+WorkingDirectory=/home/pi/pybinclock
+Environment=PATH=/home/pi/pybinclock/.venv/bin
+ExecStart=/home/pi/pybinclock/.venv/bin/python -m pybinclock.PyBinClock
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
