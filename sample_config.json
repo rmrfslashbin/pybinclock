@@ -1,0 +1,55 @@
+{
+  "_comment": "PyBinClock configuration file",
+  "display": {
+    "_comment": "Display settings",
+    "rotation": 180,
+    "brightness": 0.1,
+    "width": 17,
+    "height": 7,
+    "refresh_rate": 1.0
+  },
+  "colors": {
+    "_comment": "RGB color values [R, G, B] (0-255)",
+    "on_color": [
+      255,
+      0,
+      0
+    ],
+    "off_color": [
+      0,
+      0,
+      0
+    ],
+    "status_okay": [
+      0,
+      255,
+      0
+    ],
+    "status_error": [
+      255,
+      0,
+      0
+    ],
+    "status_warn": [
+      255,
+      255,
+      0
+    ],
+    "status_info": [
+      0,
+      0,
+      255
+    ]
+  },
+  "buttons": {
+    "_comment": "GPIO pin assignments",
+    "button_a_pin": 5,
+    "button_b_pin": 6,
+    "button_x_pin": 16,
+    "button_y_pin": 24,
+    "debounce_time": 0.3
+  },
+  "font_path": "/usr/local/lib/pybinclock/5x7.ttf",
+  "log_level": "INFO",
+  "enable_buttons": true
+}

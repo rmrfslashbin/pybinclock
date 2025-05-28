@@ -7,19 +7,24 @@ interaction is not needed or desired.
 
 import signal
 import sys
+from typing import Any, List, Optional
 from time import sleep
 from unicornhatmini import UnicornHATMini
 from loguru import logger
 from pybinclock.PyBinClock import CurrentTime
+from pybinclock.config import Config
+
+# Global variable for LED controller
+leds: "LEDControllerNoButtons"
 
 
 class LEDControllerNoButtons:
     """LED controller for binary clock display without button support."""
 
-    def __enter__(self):
+    def __enter__(self) -> "LEDControllerNoButtons":
         return self
 
-    def __exit__(self, exc_type, exc_value, traceback) -> None:
+    def __exit__(self, exc_type: Any, exc_value: Any, traceback: Any) -> None:
         """Clean up resources on exit."""
         self.hat.clear()
         self.hat.show()
@@ -36,7 +41,7 @@ class LEDControllerNoButtons:
         self.hat.set_brightness(brightness)
         self.hat.set_rotation(rotation)
         self.width, self.height = self.hat.get_shape()
-        self.field = []
+        self.field: List[List[List[int]]] = []
 
         # Status indicator colors
         self.OKAY = [0, 255, 0]
@@ -79,18 +84,28 @@ class LEDControllerNoButtons:
         self.hat.show()
 
 
-def signal_handler(signum, frame):
+def signal_handler(signum: int, frame: Any) -> None:
     """Handle shutdown signals gracefully."""
     logger.info(f"Received signal {signum}, shutting down gracefully...")
-    if "leds" in globals():
-        leds.hat.clear()
-        leds.hat.show()
+    if "leds" in globals() and globals()["leds"] is not None:
+        globals()["leds"].hat.clear()
+        globals()["leds"].hat.show()
     sys.exit(0)
 
 
 @logger.catch
-def BinClockLEDs():
-    """Main entry point for the no-buttons binary clock display."""
+def BinClockLEDs(config_path: Optional[str] = None) -> None:
+    """Main entry point for the no-buttons binary clock display.
+    
+    Args:
+        config_path: Optional path to configuration file
+    """
+    # Load configuration
+    config = Config.load(config_path)
+    
+    # Configure logging
+    logger.remove()
+    logger.add(sys.stderr, level=config.log_level)
     logger.info("Starting BinClockLEDs (no buttons mode)")
 
     global leds
@@ -100,7 +115,10 @@ def BinClockLEDs():
     signal.signal(signal.SIGINT, signal_handler)
 
     try:
-        leds = LEDControllerNoButtons(rotation=180)
+        leds = LEDControllerNoButtons(
+            rotation=config.display.rotation,
+            brightness=config.display.brightness
+        )
         ct = CurrentTime()
 
         heartbeat_state = True
@@ -109,9 +127,8 @@ def BinClockLEDs():
             # Update the current time
             ct.update()
 
-            # Toggle heartbeat indicator
-            heartbeat_state = not heartbeat_state
-            leds.setStatus("heartbeat", leds.OKAY if heartbeat_state else [0, 0, 0])
+            # Heartbeat indicator disabled - keep it off
+            leds.setStatus("heartbeat", [0, 0, 0])
 
             # Reset the row counter
             row = 0
@@ -129,17 +146,17 @@ def BinClockLEDs():
                 i.reverse()
                 for led in range(len(i)):
                     if i[led] == 1:
-                        # Turn on the LED (red)
-                        leds.field[row][16 - led] = [255, 0, 0]
+                        # Turn on the LED with configured color
+                        leds.field[row][16 - led] = config.colors.on_color
                     else:
                         # Turn off the LED
-                        leds.field[row][16 - led] = [0, 0, 0]
+                        leds.field[row][16 - led] = config.colors.off_color
 
                 row += 1
 
             # Update the display
             leds.draw()
-            sleep(1)
+            sleep(config.display.refresh_rate)
 
     except KeyboardInterrupt:
         logger.info("Keyboard interrupt received")

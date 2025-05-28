@@ -1,0 +1,18 @@
+{
+  "_comment": "PyBinClock configuration - Blue theme",
+  "display": {
+    "rotation": 180,
+    "brightness": 0.15,
+    "refresh_rate": 1.0
+  },
+  "colors": {
+    "_comment": "Blue theme colors",
+    "on_color": [0, 100, 255],
+    "off_color": [0, 0, 20],
+    "status_okay": [0, 255, 0],
+    "status_error": [255, 0, 0],
+    "status_warn": [255, 255, 0],
+    "status_info": [0, 0, 255]
+  },
+  "log_level": "INFO"
+}

@@ -1,0 +1,14 @@
+{
+  "_comment": "PyBinClock configuration - Green/Matrix theme",
+  "display": {
+    "rotation": 180,
+    "brightness": 0.1,
+    "refresh_rate": 1.0
+  },
+  "colors": {
+    "_comment": "Matrix-style green theme",
+    "on_color": [0, 255, 0],
+    "off_color": [0, 20, 0]
+  },
+  "log_level": "INFO"
+}

@@ -7,8 +7,8 @@ Provides configuration management with defaults and user overrides.
 
 import json
 from pathlib import Path
-from typing import List, Optional
-from dataclasses import dataclass, asdict
+from typing import List, Optional, Union
+from dataclasses import dataclass, asdict, field
 from loguru import logger
 
 
@@ -16,14 +16,14 @@ from loguru import logger
 class ColorScheme:
     """Color scheme configuration for the display."""
 
-    on_color: List[int] = None
-    off_color: List[int] = None
-    status_okay: List[int] = None
-    status_error: List[int] = None
-    status_warn: List[int] = None
-    status_info: List[int] = None
+    on_color: Optional[List[int]] = None
+    off_color: Optional[List[int]] = None
+    status_okay: Optional[List[int]] = None
+    status_error: Optional[List[int]] = None
+    status_warn: Optional[List[int]] = None
+    status_info: Optional[List[int]] = None
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """Set default colors if not provided."""
         if self.on_color is None:
             self.on_color = [255, 0, 0]  # Red
@@ -49,7 +49,7 @@ class DisplayConfig:
     height: int = 7
     refresh_rate: float = 1.0
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """Validate display settings."""
         if self.rotation not in [0, 90, 180, 270]:
             raise ValueError(
@@ -80,21 +80,16 @@ class ButtonConfig:
 class Config:
     """Main configuration class for PyBinClock."""
 
-    display: DisplayConfig = None
-    colors: ColorScheme = None
-    buttons: ButtonConfig = None
+    display: DisplayConfig = field(default_factory=DisplayConfig)
+    colors: ColorScheme = field(default_factory=ColorScheme)
+    buttons: ButtonConfig = field(default_factory=ButtonConfig)
     font_path: str = "/usr/local/lib/pybinclock/5x7.ttf"
     log_level: str = "INFO"
     enable_buttons: bool = True
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """Initialize sub-configurations if not provided."""
-        if self.display is None:
-            self.display = DisplayConfig()
-        if self.colors is None:
-            self.colors = ColorScheme()
-        if self.buttons is None:
-            self.buttons = ButtonConfig()
+        # No longer needed as we use default_factory
 
     @classmethod
     def load(cls, config_path: Optional[str] = None) -> "Config":
@@ -133,15 +128,18 @@ class Config:
 
                 # Load display config
                 if "display" in data:
-                    config.display = DisplayConfig(**data["display"])
+                    display_data = {k: v for k, v in data["display"].items() if not k.startswith("_")}
+                    config.display = DisplayConfig(**display_data)
 
                 # Load color scheme
                 if "colors" in data:
-                    config.colors = ColorScheme(**data["colors"])
+                    colors_data = {k: v for k, v in data["colors"].items() if not k.startswith("_")}
+                    config.colors = ColorScheme(**colors_data)
 
                 # Load button config
                 if "buttons" in data:
-                    config.buttons = ButtonConfig(**data["buttons"])
+                    buttons_data = {k: v for k, v in data["buttons"].items() if not k.startswith("_")}
+                    config.buttons = ButtonConfig(**buttons_data)
 
                 # Load other settings
                 config.font_path = data.get("font_path", config.font_path)

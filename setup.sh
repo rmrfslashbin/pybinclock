@@ -54,7 +54,19 @@ echo "Creating executable scripts..."
 sudo tee "$BIN_DIR/pybinclock" > /dev/null << EOF
 #!/bin/bash
 cd /usr/local/lib/pybinclock
-exec "$UV_PATH" run python -c 'from pybinclock.BinClockLEDs_nobuttons import BinClockLEDs; BinClockLEDs()'
+# Check for config file in standard locations
+CONFIG_PATH=""
+if [ -f "\$HOME/.config/pybinclock/config.json" ]; then
+    CONFIG_PATH="\$HOME/.config/pybinclock/config.json"
+elif [ -f "/etc/pybinclock/config.json" ]; then
+    CONFIG_PATH="/etc/pybinclock/config.json"
+fi
+
+if [ -n "\$CONFIG_PATH" ]; then
+    exec "$UV_PATH" run python -c "from pybinclock.BinClockLEDs_nobuttons import BinClockLEDs; BinClockLEDs('\$CONFIG_PATH')"
+else
+    exec "$UV_PATH" run python -c 'from pybinclock.BinClockLEDs_nobuttons import BinClockLEDs; BinClockLEDs()'
+fi
 EOF
 
 sudo tee "$BIN_DIR/pybinclock-test" > /dev/null << EOF

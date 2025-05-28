@@ -9,7 +9,7 @@ with better error handling, configuration support, and optimized performance.
 import signal
 import sys
 from time import sleep
-from typing import List, Tuple, Optional
+from typing import List, Tuple, Optional, Union, Any
 
 from loguru import logger
 from PIL import Image, ImageDraw, ImageFont
@@ -26,12 +26,15 @@ except ImportError:
 from pybinclock.PyBinClock import CurrentTime
 from pybinclock.config import Config
 
+# Global variable for controller
+controller: Optional["LEDController"] = None
+
 
 class MockHAT:
     """Mock HAT for testing without hardware."""
 
-    def __init__(self):
-        self.pixels = {}
+    def __init__(self) -> None:
+        self.pixels: dict[Tuple[int, int], Tuple[int, int, int]] = {}
         self.brightness = 0.1
         self.rotation = 0
 
@@ -76,13 +79,13 @@ class LEDController:
             config: Configuration object with display and color settings.
         """
         self.config = config
-        self.hat = None
-        self.buttons = {}
-        self.field = []
+        self.hat: Optional[Union[UnicornHATMini, MockHAT]] = None
+        self.buttons: dict[str, Union[Button, MockButton]] = {}
+        self.field: List[List[List[int]]] = []
         self.paused = False
         self.mode = "binclock"
         self.exit = False
-        self.last_time_update = {}
+        self.last_time_update: dict[str, List[int]] = {}
 
         # Initialize hardware
         self._init_hardware()
@@ -143,11 +146,11 @@ class LEDController:
             logger.error(f"Failed to initialize hardware: {e}")
             raise
 
-    def __enter__(self):
+    def __enter__(self) -> "LEDController":
         """Context manager entry."""
         return self
 
-    def __exit__(self, exc_type, exc_value, traceback) -> None:
+    def __exit__(self, exc_type: Any, exc_value: Any, traceback: Any) -> None:
         """Context manager exit with cleanup."""
         self.cleanup()
 
@@ -307,7 +310,7 @@ class LEDController:
             row += 1
 
 
-def signal_handler(signum, frame):
+def signal_handler(signum: int, frame: Any) -> None:
     """Handle shutdown signals gracefully."""
     logger.info(f"Received signal {signum}, shutting down gracefully...")
     if "controller" in globals() and controller:

@@ -6,15 +6,16 @@ from gpiozero import Button
 from unicornhatmini import UnicornHATMini
 from PIL import Image, ImageDraw, ImageFont
 from time import sleep
+from typing import Any, List
 from loguru import logger
 from pybinclock.PyBinClock import CurrentTime
 
 
 class LEDController:
-    def __enter__(self):
+    def __enter__(self) -> "LEDController":
         return self
 
-    def __exit__(self, exc_type, exc_value, traceback) -> None:
+    def __exit__(self, exc_type: Any, exc_value: Any, traceback: Any) -> None:
         self.hat.clear()
         self.hat.show()
         self.button_a.close()
@@ -27,7 +28,7 @@ class LEDController:
         self.hat.set_brightness(brightness)
         self.hat.set_rotation(rotation)
         self.width, self.height = self.hat.get_shape()
-        self.field = []
+        self.field: List[List[List[int]]] = []
 
         self.OKAY = [0, 255, 0]
         self.ERROR = [255, 0, 0]
@@ -47,7 +48,7 @@ class LEDController:
         self.mode = "binclock"
         self.exit = False
 
-        self.status = {}
+        self.status: dict[str, List[Any]] = {}
         self.status["okay"] = [0, 6, self.INFO]  # x, y, [r, g, b]
         self.status["paused"] = [1, 6, self.OKAY]  # x, y, [r, g, b]
         self.status["mode"] = [2, 6, self.OKAY]  # x, y, [r, g, b]
@@ -141,7 +142,7 @@ class LEDController:
                 sleep(0.05)
 
 
-def signal_handler(signum, frame):
+def signal_handler(signum: int, frame: Any) -> None:
     """Handle shutdown signals gracefully"""
     logger.info(f"Received signal {signum}, shutting down gracefully...")
     if "leds" in globals():
@@ -155,7 +156,7 @@ def signal_handler(signum, frame):
 
 
 @logger.catch
-def BinClockLEDs():
+def BinClockLEDs() -> None:
     logger.info("starting BinClockLEDs")
 
     global leds
