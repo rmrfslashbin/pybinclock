@@ -13,7 +13,7 @@ from typing import Dict, List
 
 class CurrentTime:
     """Manages current time and its binary representation."""
-    
+
     def __init__(self) -> None:
         """Initialize CurrentTime with current time values."""
         self.now: datetime = datetime.now()
@@ -33,61 +33,61 @@ class CurrentTime:
 
     def get_hour_bin(self) -> List[int]:
         """Convert current hour to 5-bit binary representation (24-hour format).
-        
+
         Returns:
             List of integers (0 or 1) representing binary digits.
         """
-        return [int(x) for x in list('{0:05b}'.format(self.now.hour))]
+        return [int(x) for x in list("{0:05b}".format(self.now.hour))]
 
     def get_minute_bin(self) -> List[int]:
         """Convert current minute to 6-bit binary representation.
-        
+
         Returns:
             List of integers (0 or 1) representing binary digits.
         """
-        return [int(x) for x in list('{0:06b}'.format(self.now.minute))]
+        return [int(x) for x in list("{0:06b}".format(self.now.minute))]
 
     def get_second_bin(self) -> List[int]:
         """Convert current second to 6-bit binary representation.
-        
+
         Returns:
             List of integers (0 or 1) representing binary digits.
         """
-        return [int(x) for x in list('{0:06b}'.format(self.now.second))]
+        return [int(x) for x in list("{0:06b}".format(self.now.second))]
 
     def get_month_bin(self) -> List[int]:
         """Convert current month to 4-bit binary representation.
-        
+
         Returns:
             List of integers (0 or 1) representing binary digits.
         """
-        return [int(x) for x in list('{0:04b}'.format(self.now.month))]
+        return [int(x) for x in list("{0:04b}".format(self.now.month))]
 
     def get_day_bin(self) -> List[int]:
         """Convert current day to 5-bit binary representation.
-        
+
         Returns:
             List of integers (0 or 1) representing binary digits.
         """
-        return [int(x) for x in list('{0:05b}'.format(self.now.day))]
+        return [int(x) for x in list("{0:05b}".format(self.now.day))]
 
     def get_year_bin(self) -> List[int]:
         """Convert current year to 11-bit binary representation.
-        
+
         Returns:
             List of integers (0 or 1) representing binary digits.
         """
-        return [int(x) for x in list('{0:011b}'.format(self.now.year))]
+        return [int(x) for x in list("{0:011b}".format(self.now.year))]
 
 
 def PyBinClock() -> None:
     """Main function to run the binary clock in console mode.
-    
+
     Continuously updates and displays the current time in binary format
     to the console. Useful for testing and debugging.
     """
     ct = CurrentTime()
-    
+
     try:
         while True:
             ct.update()
