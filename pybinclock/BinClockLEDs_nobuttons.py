@@ -96,13 +96,13 @@ def signal_handler(signum: int, frame: Any) -> None:
 @logger.catch
 def BinClockLEDs(config_path: Optional[str] = None) -> None:
     """Main entry point for the no-buttons binary clock display.
-    
+
     Args:
         config_path: Optional path to configuration file
     """
     # Load configuration
     config = Config.load(config_path)
-    
+
     # Configure logging
     logger.remove()
     logger.add(sys.stderr, level=config.log_level)
@@ -116,8 +116,7 @@ def BinClockLEDs(config_path: Optional[str] = None) -> None:
 
     try:
         leds = LEDControllerNoButtons(
-            rotation=config.display.rotation,
-            brightness=config.display.brightness
+            rotation=config.display.rotation, brightness=config.display.brightness
         )
         ct = CurrentTime()
 

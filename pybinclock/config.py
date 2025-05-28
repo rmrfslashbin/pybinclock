@@ -7,7 +7,7 @@ Provides configuration management with defaults and user overrides.
 
 import json
 from pathlib import Path
-from typing import List, Optional, Union
+from typing import List, Optional
 from dataclasses import dataclass, asdict, field
 from loguru import logger
 
@@ -128,17 +128,27 @@ class Config:
 
                 # Load display config
                 if "display" in data:
-                    display_data = {k: v for k, v in data["display"].items() if not k.startswith("_")}
+                    display_data = {
+                        k: v
+                        for k, v in data["display"].items()
+                        if not k.startswith("_")
+                    }
                     config.display = DisplayConfig(**display_data)
 
                 # Load color scheme
                 if "colors" in data:
-                    colors_data = {k: v for k, v in data["colors"].items() if not k.startswith("_")}
+                    colors_data = {
+                        k: v for k, v in data["colors"].items() if not k.startswith("_")
+                    }
                     config.colors = ColorScheme(**colors_data)
 
                 # Load button config
                 if "buttons" in data:
-                    buttons_data = {k: v for k, v in data["buttons"].items() if not k.startswith("_")}
+                    buttons_data = {
+                        k: v
+                        for k, v in data["buttons"].items()
+                        if not k.startswith("_")
+                    }
                     config.buttons = ButtonConfig(**buttons_data)
 
                 # Load other settings
