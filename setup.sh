@@ -34,20 +34,33 @@ sudo cp "$SCRIPT_DIR/5x7.ttf" "$APP_DIR/"
 # Install Python dependencies using uv
 echo "Installing Python dependencies..."
 cd "$APP_DIR"
-sudo /home/rmrfslashbin/.local/bin/uv sync --frozen
+# Try to find uv in common locations
+UV_PATH=""
+if command -v uv &> /dev/null; then
+    UV_PATH=$(command -v uv)
+elif [ -f "$HOME/.local/bin/uv" ]; then
+    UV_PATH="$HOME/.local/bin/uv"
+elif [ -f "/usr/local/bin/uv" ]; then
+    UV_PATH="/usr/local/bin/uv"
+else
+    echo "Error: uv not found. Please install uv first: https://github.com/astral-sh/uv"
+    exit 1
+fi
+echo "Using uv at: $UV_PATH"
+sudo "$UV_PATH" sync --frozen
 
 # Create wrapper scripts in /usr/local/bin
 echo "Creating executable scripts..."
-sudo tee "$BIN_DIR/pybinclock" > /dev/null << 'EOF'
+sudo tee "$BIN_DIR/pybinclock" > /dev/null << EOF
 #!/bin/bash
 cd /usr/local/lib/pybinclock
-exec /home/rmrfslashbin/.local/bin/uv run python -c 'from pybinclock.BinClockLEDs_nobuttons import BinClockLEDs; BinClockLEDs()'
+exec "$UV_PATH" run python -c 'from pybinclock.BinClockLEDs_nobuttons import BinClockLEDs; BinClockLEDs()'
 EOF
 
-sudo tee "$BIN_DIR/pybinclock-test" > /dev/null << 'EOF'
+sudo tee "$BIN_DIR/pybinclock-test" > /dev/null << EOF
 #!/bin/bash
 cd /usr/local/lib/pybinclock
-exec /home/rmrfslashbin/.local/bin/uv run python -c 'from pybinclock.PyBinClock import PyBinClock; PyBinClock()'
+exec "$UV_PATH" run python -c 'from pybinclock.PyBinClock import PyBinClock; PyBinClock()'
 EOF
 
 # Make scripts executable
