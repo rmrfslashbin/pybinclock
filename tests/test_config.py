@@ -41,8 +41,6 @@ class TestDisplayConfig:
 
         assert display.rotation == 180
         assert display.brightness == 0.1
-        assert display.width == 17
-        assert display.height == 7
         assert display.refresh_rate == 1.0
 
     def test_valid_rotations(self):
@@ -146,7 +144,7 @@ class TestConfig:
             assert config.log_level == "DEBUG"
 
             # Other values should be defaults
-            assert config.display.width == 17
+            assert config.display.refresh_rate == 1.0
             assert config.colors.off_color == [0, 0, 0]
 
         finally:
@@ -196,6 +194,28 @@ class TestConfig:
             assert "colors" in sample_data
             assert "buttons" in sample_data
 
+        finally:
+            Path(temp_path).unlink()
+
+    def test_load_ignores_unknown_keys(self):
+        """Unknown/legacy keys (e.g. removed width/height) should not crash."""
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
+            config_data = {
+                "display": {
+                    "_comment": "annotated",
+                    "rotation": 90,
+                    "width": 17,  # legacy key no longer supported
+                    "height": 7,  # legacy key no longer supported
+                },
+                "colors": {"_comment": "notes", "on_color": [1, 2, 3]},
+            }
+            json.dump(config_data, f)
+            temp_path = f.name
+
+        try:
+            config = Config.load(temp_path)
+            assert config.display.rotation == 90
+            assert config.colors.on_color == [1, 2, 3]
         finally:
             Path(temp_path).unlink()
 

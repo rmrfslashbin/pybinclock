@@ -63,9 +63,9 @@ elif [ -f "/etc/pybinclock/config.json" ]; then
 fi
 
 if [ -n "\$CONFIG_PATH" ]; then
-    exec "$UV_PATH" run python -c "from pybinclock.BinClockLEDs_nobuttons import BinClockLEDs; BinClockLEDs('\$CONFIG_PATH')"
+    exec "$UV_PATH" run python -c "from pybinclock.BinClockLEDs import BinClockLEDs; BinClockLEDs('\$CONFIG_PATH')"
 else
-    exec "$UV_PATH" run python -c 'from pybinclock.BinClockLEDs_nobuttons import BinClockLEDs; BinClockLEDs()'
+    exec "$UV_PATH" run python -c 'from pybinclock.BinClockLEDs import BinClockLEDs; BinClockLEDs()'
 fi
 EOF
 

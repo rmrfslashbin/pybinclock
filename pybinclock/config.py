@@ -7,46 +7,51 @@ Provides configuration management with defaults and user overrides.
 
 import json
 from pathlib import Path
-from typing import List, Optional
-from dataclasses import dataclass, asdict, field
+from typing import Any, Dict, List, Optional
+from dataclasses import dataclass, asdict, field, fields
 from loguru import logger
+
+
+def _filter_known_fields(cls: type, data: Dict[str, Any]) -> Dict[str, Any]:
+    """Return only the keys of ``data`` that are fields of the dataclass ``cls``.
+
+    Silently drops comment keys (``_comment``) and any settings that are not
+    recognized so that older or annotated config files load without crashing.
+
+    Args:
+        cls: A dataclass type to match keys against.
+        data: Raw dictionary loaded from a config file.
+
+    Returns:
+        A dictionary containing only recognized field names.
+    """
+    valid = {f.name for f in fields(cls)}
+    return {k: v for k, v in data.items() if k in valid}
 
 
 @dataclass
 class ColorScheme:
     """Color scheme configuration for the display."""
 
-    on_color: Optional[List[int]] = None
-    off_color: Optional[List[int]] = None
-    status_okay: Optional[List[int]] = None
-    status_error: Optional[List[int]] = None
-    status_warn: Optional[List[int]] = None
-    status_info: Optional[List[int]] = None
-
-    def __post_init__(self) -> None:
-        """Set default colors if not provided."""
-        if self.on_color is None:
-            self.on_color = [255, 0, 0]  # Red
-        if self.off_color is None:
-            self.off_color = [0, 0, 0]  # Black (off)
-        if self.status_okay is None:
-            self.status_okay = [0, 255, 0]  # Green
-        if self.status_error is None:
-            self.status_error = [255, 0, 0]  # Red
-        if self.status_warn is None:
-            self.status_warn = [255, 255, 0]  # Yellow
-        if self.status_info is None:
-            self.status_info = [0, 0, 255]  # Blue
+    on_color: List[int] = field(default_factory=lambda: [255, 0, 0])  # Red
+    off_color: List[int] = field(default_factory=lambda: [0, 0, 0])  # Off
+    status_okay: List[int] = field(default_factory=lambda: [0, 255, 0])  # Green
+    status_error: List[int] = field(default_factory=lambda: [255, 0, 0])  # Red
+    status_warn: List[int] = field(default_factory=lambda: [255, 255, 0])  # Yellow
+    status_info: List[int] = field(default_factory=lambda: [0, 0, 255])  # Blue
 
 
 @dataclass
 class DisplayConfig:
-    """Display configuration settings."""
+    """Display configuration settings.
+
+    Note: the physical panel dimensions are read directly from the hardware
+    via ``get_shape()``; only rotation, brightness, and refresh rate are
+    configurable here.
+    """
 
     rotation: int = 180
     brightness: float = 0.1
-    width: int = 17
-    height: int = 7
     refresh_rate: float = 1.0
 
     def __post_init__(self) -> None:
@@ -87,10 +92,6 @@ class Config:
     log_level: str = "INFO"
     enable_buttons: bool = True
 
-    def __post_init__(self) -> None:
-        """Initialize sub-configurations if not provided."""
-        # No longer needed as we use default_factory
-
     @classmethod
     def load(cls, config_path: Optional[str] = None) -> "Config":
         """
@@ -128,28 +129,21 @@ class Config:
 
                 # Load display config
                 if "display" in data:
-                    display_data = {
-                        k: v
-                        for k, v in data["display"].items()
-                        if not k.startswith("_")
-                    }
-                    config.display = DisplayConfig(**display_data)
+                    config.display = DisplayConfig(
+                        **_filter_known_fields(DisplayConfig, data["display"])
+                    )
 
                 # Load color scheme
                 if "colors" in data:
-                    colors_data = {
-                        k: v for k, v in data["colors"].items() if not k.startswith("_")
-                    }
-                    config.colors = ColorScheme(**colors_data)
+                    config.colors = ColorScheme(
+                        **_filter_known_fields(ColorScheme, data["colors"])
+                    )
 
                 # Load button config
                 if "buttons" in data:
-                    buttons_data = {
-                        k: v
-                        for k, v in data["buttons"].items()
-                        if not k.startswith("_")
-                    }
-                    config.buttons = ButtonConfig(**buttons_data)
+                    config.buttons = ButtonConfig(
+                        **_filter_known_fields(ButtonConfig, data["buttons"])
+                    )
 
                 # Load other settings
                 config.font_path = data.get("font_path", config.font_path)
@@ -204,8 +198,6 @@ class Config:
                 "_comment": "Display settings",
                 "rotation": 180,
                 "brightness": 0.1,
-                "width": 17,
-                "height": 7,
                 "refresh_rate": 1.0,
             },
             "colors": {
