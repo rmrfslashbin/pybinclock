@@ -15,6 +15,7 @@ binary matrix. Behaviour is driven entirely by a :class:`~pybinclock.config.Conf
 import signal
 import sys
 import threading
+from pathlib import Path
 from time import sleep
 from typing import Any, Dict, List, Optional, Tuple, Union
 
@@ -32,6 +33,20 @@ except ImportError:
 
 from pybinclock.PyBinClock import CurrentTime
 from pybinclock.config import Config
+
+# systemd-timesyncd creates <dir>/synchronized once the clock is NTP-synced.
+TIMESYNC_DIR = Path("/run/systemd/timesync")
+
+
+def clock_synchronized(sync_dir: Path = TIMESYNC_DIR) -> bool:
+    """Return True once the system clock is known to be synchronized.
+
+    Hosts without systemd-timesyncd (no ``sync_dir``) have nothing to wait
+    for, so they count as synchronized rather than blocking the clock forever.
+    """
+    if not sync_dir.is_dir():
+        return True
+    return (sync_dir / "synchronized").exists()
 
 
 class MockHAT:
@@ -349,6 +364,7 @@ def BinClockLEDs(config_path: Optional[str] = None) -> None:
     try:
         with LEDController(config) as controller:
             ct = CurrentTime()
+            synced = False
 
             while True:
                 if controller.exit:
@@ -363,6 +379,19 @@ def BinClockLEDs(config_path: Optional[str] = None) -> None:
                 if controller.paused:
                     sleep(0.1)
                     continue
+
+                # Until NTP has synced, say so instead of showing a wrong time.
+                # Checked every pass until true, then never again.
+                if not synced:
+                    synced = clock_synchronized(TIMESYNC_DIR)
+                    if not synced:
+                        controller.write_text(
+                            "NTP SYNC",
+                            config.colors.status_warn,
+                            interruptible=False,
+                        )
+                        continue
+                    logger.info("System clock synchronized")
 
                 if controller.mode == "scrollclock":
                     ct.update()

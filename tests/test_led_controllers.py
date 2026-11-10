@@ -266,3 +266,58 @@ class TestMainLoop:
 
         # One update in CurrentTime() plus one per scroll iteration.
         assert len(updates) >= 3
+
+
+class TestTimeSync:
+    """The panel waits for NTP before showing the time."""
+
+    def test_no_timesyncd_counts_as_synced(self, tmp_path):
+        mod = importlib.import_module("pybinclock.BinClockLEDs")
+        assert mod.clock_synchronized(tmp_path / "absent") is True
+
+    def test_unsynced_then_synced(self, tmp_path):
+        mod = importlib.import_module("pybinclock.BinClockLEDs")
+        assert mod.clock_synchronized(tmp_path) is False
+        (tmp_path / "synchronized").touch()
+        assert mod.clock_synchronized(tmp_path) is True
+
+    @patch("pybinclock.BinClockLEDs.HARDWARE_AVAILABLE", False)
+    def test_shows_ntp_sync_until_synced(self, monkeypatch, tmp_path):
+        """Main loop scrolls NTP SYNC, then renders the clock once synced."""
+        import json
+
+        mod = importlib.import_module("pybinclock.BinClockLEDs")
+        cfg = tmp_path / "config.json"
+        cfg.write_text(json.dumps({"enable_buttons": False}))
+        sync_dir = tmp_path / "timesync"
+        sync_dir.mkdir()
+        monkeypatch.setattr(mod, "TIMESYNC_DIR", sync_dir)
+        monkeypatch.setattr(mod, "signal", Mock())
+
+        texts = []
+        draws = []
+
+        def fake_write_text(self, text, color, interruptible=True):
+            texts.append(text)
+            if len(texts) == 2:
+                (sync_dir / "synchronized").touch()
+
+        def fake_sleep(_s):
+            if draws:
+                ctrl = draws[0]
+                ctrl.exit = True
+
+        real_draw = mod.LEDController.draw
+
+        def tracking_draw(self):
+            draws.append(self)
+            real_draw(self)
+
+        monkeypatch.setattr(mod.LEDController, "write_text", fake_write_text)
+        monkeypatch.setattr(mod.LEDController, "draw", tracking_draw)
+        monkeypatch.setattr(mod, "sleep", fake_sleep)
+
+        mod.BinClockLEDs(str(cfg))
+
+        assert texts[:2] == ["NTP SYNC", "NTP SYNC"]
+        assert texts[-1] == "Shutting down!"  # clock ran, then exited

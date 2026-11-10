@@ -165,6 +165,10 @@ Row 5: Second [ 6 bits]  30   = 011110
 
 The bottom row (row 6) shows small status indicator pixels.
 
+Until the system clock is NTP-synchronized (systemd-timesyncd's
+`/run/systemd/timesync/synchronized` exists), the panel scrolls `NTP SYNC`
+instead of showing a possibly wrong time. Hosts without timesyncd skip the wait.
+
 ### Button Controls (when `enable_buttons` is true)
 
 - **Button A** — pause / resume. Freeze the display, count the dots, and work
