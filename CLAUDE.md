@@ -33,7 +33,10 @@ three (`BinClockLEDs.py` with buttons, `_nobuttons.py`, `_improved.py`); they
 were consolidated into the single config-driven `LEDController`. Behavior is
 selected via config, not by importing different modules:
 - `enable_buttons: true`  -> interactive (A=pause, B=mode toggle, X=exit)
-- `enable_buttons: false` -> headless (the service uses this)
+- `enable_buttons: false` -> headless (the default, and what the service uses)
+- `require_hardware` (default true on Linux/ARM) makes a failed hardware import
+  fatal instead of falling back to mock hardware; tests run off-Pi where it is
+  false. The entry point exits 1 on any fatal error.
 
 ## Tooling / commands
 

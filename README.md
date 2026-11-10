@@ -135,13 +135,20 @@ uv run python -c \
   },
   "font_path": "/path/to/font.ttf",  // optional; defaults to the bundled 5x7.ttf
   "log_level": "INFO",        // DEBUG, INFO, WARNING, ERROR
-  "enable_buttons": true      // set false for headless/service use
+  "enable_buttons": false,    // true only if buttons are wired (interactive)
+  "require_hardware": true    // optional; defaults to true on a Pi, false elsewhere
 }
 ```
 
-> **Headless service note:** the systemd service runs with
-> `"enable_buttons": false` so no GPIO buttons are claimed. Set it to `true`
-> only if you have the buttons wired and want interactive controls.
+> **Buttons are off by default** (headless), so no GPIO button pins are
+> claimed. Set `"enable_buttons": true` only if you have the buttons wired and
+> want interactive controls. A config file that fails validation is ignored as
+> a whole (an error is logged) and the defaults apply.
+>
+> **`require_hardware`** (default: true on Linux/ARM, false elsewhere): if the
+> LED libraries fail to import, exit with an error instead of silently running
+> on mock hardware with the panel dark. The process exits non-zero on any fatal
+> error, so systemd records a failure.
 >
 > The panel dimensions (17×7) are read directly from the hardware, so there
 > are no `width`/`height` settings. Unknown keys in a config file are ignored,

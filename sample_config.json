@@ -48,5 +48,5 @@
     "debounce_time": 0.3
   },
   "log_level": "INFO",
-  "enable_buttons": true
+  "enable_buttons": false
 }

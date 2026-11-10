@@ -6,6 +6,8 @@ Provides configuration management with defaults and user overrides.
 """
 
 import json
+import platform
+import sys
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 from dataclasses import dataclass, asdict, field, fields
@@ -13,6 +15,15 @@ from loguru import logger
 
 # Bitmap font for scrolling-text mode, shipped inside the package.
 BUNDLED_FONT = Path(__file__).with_name("5x7.ttf")
+
+
+def running_on_pi() -> bool:
+    """Return True on Linux/ARM, i.e. where the LED hardware is expected."""
+    return sys.platform == "linux" and platform.machine() in (
+        "aarch64",
+        "armv7l",
+        "armv6l",
+    )
 
 
 def _filter_known_fields(cls: type, data: Dict[str, Any]) -> Dict[str, Any]:
@@ -110,7 +121,12 @@ class Config:
     buttons: ButtonConfig = field(default_factory=ButtonConfig)
     font_path: str = str(BUNDLED_FONT)
     log_level: str = "INFO"
-    enable_buttons: bool = True
+    # Off by default: a headless clock must never claim the button pins, and a
+    # rejected config falls back to these defaults.
+    enable_buttons: bool = False
+    # On a Pi, refuse to fall back to mock hardware (which runs with the panel
+    # dark while the service looks healthy). Off-Pi, mocks are expected.
+    require_hardware: bool = field(default_factory=running_on_pi)
 
     @classmethod
     def load(cls, config_path: Optional[str] = None) -> "Config":
@@ -167,13 +183,13 @@ class Config:
                 # Load other settings
                 config.font_path = data.get("font_path", config.font_path)
                 config.log_level = data.get("log_level", config.log_level)
-                enable_buttons = data.get("enable_buttons", config.enable_buttons)
-                if not isinstance(enable_buttons, bool):
-                    raise ValueError(
-                        f"Invalid enable_buttons: {enable_buttons!r}. "
-                        "Must be true or false."
-                    )
-                config.enable_buttons = enable_buttons
+                for key in ("enable_buttons", "require_hardware"):
+                    value = data.get(key, getattr(config, key))
+                    if not isinstance(value, bool):
+                        raise ValueError(
+                            f"Invalid {key}: {value!r}. Must be true or false."
+                        )
+                    setattr(config, key, value)
 
                 logger.info(f"Loaded configuration from: {config_path}")
                 return config
@@ -202,6 +218,7 @@ class Config:
             "font_path": self.font_path,
             "log_level": self.log_level,
             "enable_buttons": self.enable_buttons,
+            "require_hardware": self.require_hardware,
         }
 
         # Create directory if it doesn't exist
@@ -245,7 +262,7 @@ class Config:
                 "debounce_time": 0.3,
             },
             "log_level": "INFO",
-            "enable_buttons": True,
+            "enable_buttons": False,
         }
 
         # Create directory if it doesn't exist

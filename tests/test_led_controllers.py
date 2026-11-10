@@ -61,11 +61,11 @@ class TestLEDControllerMockHardware:
         assert len(controller.field[0]) == 17
 
     @patch("pybinclock.BinClockLEDs.HARDWARE_AVAILABLE", False)
-    def test_buttons_enabled_by_default(self):
+    def test_buttons_enabled(self):
         """Buttons are created (as mocks) when enable_buttons is True."""
         from pybinclock.BinClockLEDs import LEDController
 
-        controller = LEDController(Config())
+        controller = LEDController(Config(enable_buttons=True))
         assert set(controller.buttons) == {"a", "b", "x", "y"}
 
     @patch("pybinclock.BinClockLEDs.HARDWARE_AVAILABLE", False)
@@ -172,7 +172,7 @@ class TestLEDControllerRealHardwarePath:
         mock_hat.get_shape.return_value = (17, 7)
         mock_hat_class.return_value = mock_hat
 
-        controller = LEDController(Config())
+        controller = LEDController(Config(enable_buttons=True))
         assert controller is not None
 
         mock_hat.set_brightness.assert_called_once()
@@ -321,3 +321,44 @@ class TestTimeSync:
 
         assert texts[:2] == ["NTP SYNC", "NTP SYNC"]
         assert texts[-1] == "Shutting down!"  # clock ran, then exited
+
+
+class TestRequireHardware:
+    """A Pi must not silently fall back to mock hardware."""
+
+    @patch("pybinclock.BinClockLEDs.HARDWARE_AVAILABLE", False)
+    def test_missing_hardware_is_fatal_when_required(self):
+        from pybinclock.BinClockLEDs import LEDController
+
+        with pytest.raises(RuntimeError, match="require_hardware"):
+            LEDController(Config(require_hardware=True))
+
+    @patch("pybinclock.BinClockLEDs.HARDWARE_AVAILABLE", False)
+    def test_missing_hardware_allowed_when_not_required(self):
+        from pybinclock.BinClockLEDs import LEDController
+
+        controller = LEDController(Config(require_hardware=False))
+        assert hasattr(controller.hat, "pixels")  # MockHAT
+
+    @patch("pybinclock.BinClockLEDs.HARDWARE_AVAILABLE", False)
+    def test_entry_point_exits_nonzero_on_fatal_error(self, monkeypatch, tmp_path):
+        """A fatal error exits 1 so systemd records a failed start."""
+        import json
+
+        mod = importlib.import_module("pybinclock.BinClockLEDs")
+        monkeypatch.setattr(mod, "signal", Mock())
+        cfg = tmp_path / "config.json"
+        cfg.write_text(json.dumps({"require_hardware": True}))
+
+        with pytest.raises(SystemExit) as exc:
+            mod.BinClockLEDs(str(cfg))
+        assert exc.value.code == 1
+
+    def test_require_hardware_defaults_to_platform(self, monkeypatch):
+        import pybinclock.config as config_mod
+
+        monkeypatch.setattr(config_mod.sys, "platform", "linux")
+        monkeypatch.setattr(config_mod.platform, "machine", lambda: "aarch64")
+        assert Config().require_hardware is True
+        monkeypatch.setattr(config_mod.platform, "machine", lambda: "x86_64")
+        assert Config().require_hardware is False

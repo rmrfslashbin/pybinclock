@@ -22,17 +22,19 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 from loguru import logger
 from PIL import Image, ImageDraw, ImageFont
 
+from pybinclock.PyBinClock import CurrentTime
+from pybinclock.config import Config
+
+# RPi.GPIO raises RuntimeError (not ImportError) on unsupported boards.
+HARDWARE_IMPORT_ERROR: Optional[BaseException] = None
 try:
     from gpiozero import Button
     from unicornhatmini import UnicornHATMini
 
     HARDWARE_AVAILABLE = True
-except ImportError:
-    logger.warning("Hardware libraries not available, running in simulation mode")
+except (ImportError, RuntimeError) as e:
+    HARDWARE_IMPORT_ERROR = e
     HARDWARE_AVAILABLE = False
-
-from pybinclock.PyBinClock import CurrentTime
-from pybinclock.config import Config
 
 # systemd-timesyncd creates <dir>/synchronized once the clock is NTP-synced.
 TIMESYNC_DIR = Path("/run/systemd/timesync")
@@ -124,6 +126,18 @@ class LEDController:
 
     def _init_hardware(self) -> None:
         """Initialize hardware components with error handling."""
+        if not HARDWARE_AVAILABLE:
+            if self.config.require_hardware:
+                raise RuntimeError(
+                    "LED hardware libraries failed to import "
+                    f"({HARDWARE_IMPORT_ERROR!r}) and require_hardware is set; "
+                    "refusing to run on mock hardware with the panel dark."
+                )
+            logger.warning(
+                "Hardware libraries not available "
+                f"({HARDWARE_IMPORT_ERROR!r}); running in simulation mode"
+            )
+
         try:
             if HARDWARE_AVAILABLE:
                 self.hat = UnicornHATMini()
@@ -340,7 +354,14 @@ def signal_handler(signum: int, frame: Any) -> None:
     sys.exit(0)
 
 
-@logger.catch
+def _fatal(_exc: BaseException) -> None:
+    """Exit non-zero after logger.catch has logged a fatal error."""
+    sys.exit(1)
+
+
+# onerror: log the traceback once, then exit 1 so systemd sees a failure
+# (plain @logger.catch swallows the exception and the process exits 0).
+@logger.catch(onerror=_fatal)
 def BinClockLEDs(config_path: Optional[str] = None) -> None:
     """
     Main entry point for the binary clock LED display.

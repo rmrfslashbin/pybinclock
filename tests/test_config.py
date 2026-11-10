@@ -115,7 +115,8 @@ class TestConfig:
         assert Path(config.font_path).name == "5x7.ttf"
         assert Path(config.font_path).is_file()  # bundled as package data
         assert config.log_level == "INFO"
-        assert config.enable_buttons is True
+        assert config.enable_buttons is False  # headless by default
+        assert config.require_hardware is False  # tests run off-Pi
 
     def test_load_nonexistent_file(self):
         """Test loading when no config file exists."""
@@ -254,7 +255,7 @@ class TestConfig:
         path = tmp_path / "config.json"
         path.write_text(json.dumps({"enable_buttons": "false"}))
         config = Config.load(str(path))
-        assert config.enable_buttons is True  # defaults, with an error logged
+        assert config.enable_buttons is False  # defaults, with an error logged
 
     @pytest.mark.parametrize(
         "theme", sorted((Path(__file__).parent.parent / "themes").glob("*.json"))
