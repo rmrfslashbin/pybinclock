@@ -1,6 +1,6 @@
 [project]
 name = "pybinclock"
-version = "0.1.0"
+version = "0.2.0"
 description = "Binary clock for Raspberry Pi with Unicorn Mini HAT"
 authors = [{name = "Robert Sigler", email = "sigler@improvisedscience.org"}]
 requires-python = ">=3.10"
