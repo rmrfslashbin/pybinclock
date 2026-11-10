@@ -133,7 +133,7 @@ uv run python -c \
     "button_y_pin": 24,
     "debounce_time": 0.3
   },
-  "font_path": "/usr/local/lib/pybinclock/5x7.ttf",
+  "font_path": "/path/to/font.ttf",  // optional; defaults to the bundled 5x7.ttf
   "log_level": "INFO",        // DEBUG, INFO, WARNING, ERROR
   "enable_buttons": true      // set false for headless/service use
 }

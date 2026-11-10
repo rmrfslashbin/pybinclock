@@ -47,7 +47,6 @@
     "button_y_pin": 24,
     "debounce_time": 0.3
   },
-  "font_path": "/usr/local/lib/pybinclock/5x7.ttf",
   "log_level": "INFO",
   "enable_buttons": true
 }

@@ -11,6 +11,9 @@ from typing import Any, Dict, List, Optional
 from dataclasses import dataclass, asdict, field, fields
 from loguru import logger
 
+# Bitmap font for scrolling-text mode, shipped inside the package.
+BUNDLED_FONT = Path(__file__).with_name("5x7.ttf")
+
 
 def _filter_known_fields(cls: type, data: Dict[str, Any]) -> Dict[str, Any]:
     """Return only the keys of ``data`` that are fields of the dataclass ``cls``.
@@ -105,7 +108,7 @@ class Config:
     display: DisplayConfig = field(default_factory=DisplayConfig)
     colors: ColorScheme = field(default_factory=ColorScheme)
     buttons: ButtonConfig = field(default_factory=ButtonConfig)
-    font_path: str = "/usr/local/lib/pybinclock/5x7.ttf"
+    font_path: str = str(BUNDLED_FONT)
     log_level: str = "INFO"
     enable_buttons: bool = True
 
@@ -241,7 +244,6 @@ class Config:
                 "button_y_pin": 24,
                 "debounce_time": 0.3,
             },
-            "font_path": "/usr/local/lib/pybinclock/5x7.ttf",
             "log_level": "INFO",
             "enable_buttons": True,
         }

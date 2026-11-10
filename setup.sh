@@ -29,7 +29,9 @@ sudo mkdir -p "$APP_DIR"
 sudo cp -r "$SCRIPT_DIR/pybinclock" "$APP_DIR/"
 sudo cp "$SCRIPT_DIR/pyproject.toml" "$APP_DIR/"
 sudo cp "$SCRIPT_DIR/uv.lock" "$APP_DIR/"
-sudo cp "$SCRIPT_DIR/5x7.ttf" "$APP_DIR/"
+# The font ships inside the package; keep a copy at the old location for
+# configs that still set font_path to /usr/local/lib/pybinclock/5x7.ttf.
+sudo cp "$SCRIPT_DIR/pybinclock/5x7.ttf" "$APP_DIR/"
 
 # Install Python dependencies using uv
 echo "Installing Python dependencies..."

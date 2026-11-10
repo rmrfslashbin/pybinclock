@@ -21,11 +21,11 @@ pybinclock/
   PyBinClock.py     # CurrentTime: datetime -> per-field binary lists; console clock
   BinClockLEDs.py   # THE LED controller (config-driven) + mock-hardware fallback + main loop
   config.py         # Config/DisplayConfig/ColorScheme/ButtonConfig dataclasses + JSON load/save
+  5x7.ttf           # bitmap font for scrolling-text mode (package data; default font_path)
 tests/              # pytest, runs with mock hardware (no Pi needed)
 themes/             # example color-theme config JSONs
 setup.sh / uninstall.sh   # systemd install/uninstall
 sample_config.json  # example config
-5x7.ttf             # bitmap font for scrolling-text mode
 ```
 
 There is **one** LED controller module (`BinClockLEDs.py`). Earlier there were
@@ -94,7 +94,8 @@ sudo systemctl stop pybinclock.service
 # clean + copy fresh sources
 sudo rm -rf /usr/local/lib/pybinclock/pybinclock/__pycache__
 sudo cp pybinclock/*.py /usr/local/lib/pybinclock/pybinclock/
-sudo cp pyproject.toml uv.lock 5x7.ttf /usr/local/lib/pybinclock/
+sudo cp pybinclock/5x7.ttf /usr/local/lib/pybinclock/pybinclock/
+sudo cp pyproject.toml uv.lock /usr/local/lib/pybinclock/
 # resync deps against the lock, then hand the venv back to the user
 ( cd /usr/local/lib/pybinclock && sudo /home/rmrfslashbin/.local/bin/uv sync --frozen --no-dev )
 sudo chown -R rmrfslashbin:rmrfslashbin /usr/local/lib/pybinclock/.venv

@@ -112,7 +112,8 @@ class TestConfig:
         assert isinstance(config.display, DisplayConfig)
         assert isinstance(config.colors, ColorScheme)
         assert isinstance(config.buttons, ButtonConfig)
-        assert config.font_path == "/usr/local/lib/pybinclock/5x7.ttf"
+        assert Path(config.font_path).name == "5x7.ttf"
+        assert Path(config.font_path).is_file()  # bundled as package data
         assert config.log_level == "INFO"
         assert config.enable_buttons is True
 

@@ -189,14 +189,11 @@ class TestScrollAndShutdown:
     @pytest.fixture
     def controller(self, monkeypatch):
         """A mock-hardware controller with the repo font and no real sleeps."""
-        from pathlib import Path
 
         mod = importlib.import_module("pybinclock.BinClockLEDs")
         monkeypatch.setattr(mod, "HARDWARE_AVAILABLE", False)
         monkeypatch.setattr(mod, "sleep", lambda _s: None)
-        config = Config()
-        config.font_path = str(Path(__file__).parent.parent / "5x7.ttf")
-        return mod.LEDController(config)
+        return mod.LEDController(Config())
 
     def test_shutdown_message_plays_in_binclock_mode(self, controller):
         """Non-interruptible text scrolls even outside scrollclock mode."""
@@ -228,7 +225,6 @@ class TestMainLoop:
     def test_scrollclock_shows_current_time(self, monkeypatch, tmp_path):
         """Scroll mode refreshes the time instead of repeating the start time."""
         import json
-        from pathlib import Path
 
         mod = importlib.import_module("pybinclock.BinClockLEDs")
         cfg = tmp_path / "config.json"
@@ -236,7 +232,6 @@ class TestMainLoop:
             json.dumps(
                 {
                     "enable_buttons": False,
-                    "font_path": str(Path(__file__).parent.parent / "5x7.ttf"),
                 }
             )
         )
