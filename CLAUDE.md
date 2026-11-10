@@ -9,8 +9,10 @@ HAT Mini** (17×7 RGB LED matrix). It shows the local date/time as six rows of
 binary bits (year, month, day, hour, minute, second) plus a status row.
 
 **This repo runs live**: it is deployed as a systemd service (`pybinclock.service`)
-on this Pi (`rpi01`) and is actively displaying on hardware. Treat changes as
-production — verify, then redeploy and restart the service (see below).
+on the Pi `rpi01` and is actively displaying on hardware. Development happens in a
+checkout on the Mac (tests use mock hardware); deploying means getting the code
+onto rpi01. Treat changes as production — verify, then redeploy and restart the
+service (see below).
 
 ## Layout
 
@@ -36,10 +38,12 @@ selected via config, not by importing different modules:
 ## Tooling / commands
 
 - Package manager is **uv**. `requires-python >=3.10` (Python 3.9 is EOL; the Pi
-  runs 3.11). If you bump this, update it in FOUR places: `pyproject.toml`
-  `requires-python`, `[tool.mypy] python_version`, `[tool.black] target-version`,
-  and `.pre-commit-config.yaml` black `language_version`.
-- Install dev deps: `uv sync --extra dev`
+  runs 3.11). If you bump this, update it in THREE places: `pyproject.toml`
+  `requires-python`, `[tool.mypy] python_version`, `[tool.black] target-version`.
+- Install dev deps: `uv sync` (the `dev` dependency group is synced by default).
+  Hardware libraries carry a Linux-on-ARM marker, so off-Pi they are skipped and
+  the controller uses mock hardware. Production installs use `--no-dev`.
+- `make all` and `uv run pre-commit run --all-files` enforce the same checks.
 - Quality gate (all currently clean): `make all` (= format, lint, type-check, test),
   or individually `make format` / `make lint` / `make type-check` / `make test`.
 
@@ -92,14 +96,16 @@ sudo rm -rf /usr/local/lib/pybinclock/pybinclock/__pycache__
 sudo cp pybinclock/*.py /usr/local/lib/pybinclock/pybinclock/
 sudo cp pyproject.toml uv.lock 5x7.ttf /usr/local/lib/pybinclock/
 # resync deps against the lock, then hand the venv back to the user
-( cd /usr/local/lib/pybinclock && sudo /home/rmrfslashbin/.local/bin/uv sync --frozen )
+( cd /usr/local/lib/pybinclock && sudo /home/rmrfslashbin/.local/bin/uv sync --frozen --no-dev )
 sudo chown -R rmrfslashbin:rmrfslashbin /usr/local/lib/pybinclock/.venv
 sudo systemctl start pybinclock.service
 ```
 
 If you delete/rename a module, also remove the stale file from the install
-target (`cp -r` won't). If you change the module the wrapper imports, regenerate
-`/usr/local/bin/pybinclock`.
+target (`cp -r` won't). The wrapper `/usr/local/bin/pybinclock` execs the venv's
+`BinClockLEDs` entry point (no `uv run`, so starting the service never re-syncs);
+regenerate it with `setup.sh` if the entry points change. Installs made before 2026-11-10 have an
+older wrapper that calls `uv run` — rerun `setup.sh` to replace it.
 
 Verify after deploy:
 ```bash

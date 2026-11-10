@@ -17,7 +17,7 @@ install:
 
 install-dev:
 	uv sync --dev
-	pre-commit install
+	uv run pre-commit install
 
 test:
 	uv run pytest

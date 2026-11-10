@@ -10,5 +10,6 @@
     "on_color": [147, 0, 211],
     "off_color": [20, 0, 30]
   },
-  "log_level": "INFO"
+  "log_level": "INFO",
+  "enable_buttons": false
 }

@@ -47,32 +47,22 @@ else
     exit 1
 fi
 echo "Using uv at: $UV_PATH"
-sudo "$UV_PATH" sync --frozen
+sudo "$UV_PATH" sync --frozen --no-dev
 
-# Create wrapper scripts in /usr/local/bin
+# Create wrapper scripts in /usr/local/bin. They run the installed venv's entry
+# points directly (not `uv run`), so a service start never re-syncs or
+# downloads anything. Config.load() searches the standard config locations.
 echo "Creating executable scripts..."
 sudo tee "$BIN_DIR/pybinclock" > /dev/null << EOF
 #!/bin/bash
-cd /usr/local/lib/pybinclock
-# Check for config file in standard locations
-CONFIG_PATH=""
-if [ -f "\$HOME/.config/pybinclock/config.json" ]; then
-    CONFIG_PATH="\$HOME/.config/pybinclock/config.json"
-elif [ -f "/etc/pybinclock/config.json" ]; then
-    CONFIG_PATH="/etc/pybinclock/config.json"
-fi
-
-if [ -n "\$CONFIG_PATH" ]; then
-    exec "$UV_PATH" run python -c "from pybinclock.BinClockLEDs import BinClockLEDs; BinClockLEDs('\$CONFIG_PATH')"
-else
-    exec "$UV_PATH" run python -c 'from pybinclock.BinClockLEDs import BinClockLEDs; BinClockLEDs()'
-fi
+cd "$APP_DIR"
+exec "$APP_DIR/.venv/bin/BinClockLEDs"
 EOF
 
 sudo tee "$BIN_DIR/pybinclock-test" > /dev/null << EOF
 #!/bin/bash
-cd /usr/local/lib/pybinclock
-exec "$UV_PATH" run python -c 'from pybinclock.PyBinClock import PyBinClock; PyBinClock()'
+cd "$APP_DIR"
+exec "$APP_DIR/.venv/bin/PyBinClock"
 EOF
 
 # Make scripts executable

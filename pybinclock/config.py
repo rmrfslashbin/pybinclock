@@ -40,6 +40,23 @@ class ColorScheme:
     status_warn: List[int] = field(default_factory=lambda: [255, 255, 0])  # Yellow
     status_info: List[int] = field(default_factory=lambda: [0, 0, 255])  # Blue
 
+    def __post_init__(self) -> None:
+        """Validate that every color is an [R, G, B] triple of 0-255 ints."""
+        for f in fields(self):
+            value = getattr(self, f.name)
+            if (
+                not isinstance(value, list)
+                or len(value) != 3
+                or not all(
+                    isinstance(c, int) and not isinstance(c, bool) and 0 <= c <= 255
+                    for c in value
+                )
+            ):
+                raise ValueError(
+                    f"Invalid color {f.name}: {value!r}. "
+                    "Must be [R, G, B] with integers 0-255."
+                )
+
 
 @dataclass
 class DisplayConfig:
@@ -104,8 +121,6 @@ class Config:
         Returns:
             Config instance with loaded settings.
         """
-        config = cls()
-
         # Search for config file in standard locations
         if config_path is None:
             search_paths = [
@@ -124,6 +139,7 @@ class Config:
         # Load config if found
         if config_path and Path(config_path).exists():
             try:
+                config = cls()
                 with open(config_path, "r") as f:
                     data = json.load(f)
 
@@ -148,18 +164,26 @@ class Config:
                 # Load other settings
                 config.font_path = data.get("font_path", config.font_path)
                 config.log_level = data.get("log_level", config.log_level)
-                config.enable_buttons = data.get(
-                    "enable_buttons", config.enable_buttons
-                )
+                enable_buttons = data.get("enable_buttons", config.enable_buttons)
+                if not isinstance(enable_buttons, bool):
+                    raise ValueError(
+                        f"Invalid enable_buttons: {enable_buttons!r}. "
+                        "Must be true or false."
+                    )
+                config.enable_buttons = enable_buttons
 
                 logger.info(f"Loaded configuration from: {config_path}")
+                return config
             except Exception as e:
+                # Never run on a half-applied config: fall back to defaults.
                 logger.error(f"Error loading config from {config_path}: {e}")
                 logger.warning("Using default configuration")
+        elif config_path:
+            logger.warning(f"Config file not found: {config_path}; using defaults")
         else:
             logger.info("No config file found, using defaults")
 
-        return config
+        return cls()
 
     def save(self, config_path: str) -> None:
         """

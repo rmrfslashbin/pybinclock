@@ -14,5 +14,6 @@
     "status_warn": [255, 255, 0],
     "status_info": [0, 0, 255]
   },
-  "log_level": "INFO"
+  "log_level": "INFO",
+  "enable_buttons": false
 }

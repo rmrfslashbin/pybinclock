@@ -1,5 +1,5 @@
 version = 1
-revision = 2
+revision = 5
 requires-python = ">=3.10"
 resolution-markers = [
     "python_full_version >= '3.15'",
@@ -263,7 +263,7 @@ name = "exceptiongroup"
 version = "1.3.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "typing-extensions", marker = "python_full_version < '3.13'" },
+    { name = "typing-extensions" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/50/79/66800aadf48771f6b62f7eb014e352e5d06856655206165d775e675a02c9/exceptiongroup-1.3.1.tar.gz", hash = "sha256:8b412432c6055b0b7d14c310000ae93352ed6754f70fa8f7c34141f91c4e3219", size = 30371, upload-time = "2025-11-21T23:01:54.787Z" }
 wheels = [
@@ -677,24 +677,12 @@ name = "pybinclock"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
-    { name = "gpiozero" },
-    { name = "lgpio" },
+    { name = "gpiozero", marker = "platform_machine in 'aarch64 armv7l armv6l' and sys_platform == 'linux'" },
+    { name = "lgpio", marker = "platform_machine in 'aarch64 armv7l armv6l' and sys_platform == 'linux'" },
     { name = "loguru" },
     { name = "pillow" },
-    { name = "rpi-gpio" },
-    { name = "unicornhatmini" },
-]
-
-[package.optional-dependencies]
-dev = [
-    { name = "autopep8" },
-    { name = "black" },
-    { name = "flake8" },
-    { name = "mypy" },
-    { name = "pre-commit" },
-    { name = "pytest" },
-    { name = "pytest-cov" },
-    { name = "pytest-mock" },
+    { name = "rpi-gpio", marker = "platform_machine in 'aarch64 armv7l armv6l' and sys_platform == 'linux'" },
+    { name = "unicornhatmini", marker = "platform_machine in 'aarch64 armv7l armv6l' and sys_platform == 'linux'" },
 ]
 
 [package.dev-dependencies]
@@ -711,22 +699,13 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "autopep8", marker = "extra == 'dev'", specifier = ">=1.7.0" },
-    { name = "black", marker = "extra == 'dev'", specifier = ">=23.0.0" },
-    { name = "flake8", marker = "extra == 'dev'", specifier = ">=6.0.0" },
-    { name = "gpiozero", specifier = ">=2.0.1" },
-    { name = "lgpio", specifier = ">=0.2.2.0" },
+    { name = "gpiozero", marker = "platform_machine in 'aarch64 armv7l armv6l' and sys_platform == 'linux'", specifier = ">=2.0.1" },
+    { name = "lgpio", marker = "platform_machine in 'aarch64 armv7l armv6l' and sys_platform == 'linux'", specifier = ">=0.2.2.0" },
     { name = "loguru", specifier = ">=0.7.3" },
-    { name = "mypy", marker = "extra == 'dev'", specifier = ">=1.0.0" },
     { name = "pillow", specifier = ">=11.0.0" },
-    { name = "pre-commit", marker = "extra == 'dev'", specifier = ">=3.0.0" },
-    { name = "pytest", marker = "extra == 'dev'", specifier = ">=6.2" },
-    { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=4.0.0" },
-    { name = "pytest-mock", marker = "extra == 'dev'", specifier = ">=3.10.0" },
-    { name = "rpi-gpio", specifier = ">=0.7.1" },
-    { name = "unicornhatmini", specifier = ">=0.0.2" },
+    { name = "rpi-gpio", marker = "platform_machine in 'aarch64 armv7l armv6l' and sys_platform == 'linux'", specifier = ">=0.7.1" },
+    { name = "unicornhatmini", marker = "platform_machine in 'aarch64 armv7l armv6l' and sys_platform == 'linux'", specifier = ">=0.0.2" },
 ]
-provides-extras = ["dev"]
 
 [package.metadata.requires-dev]
 dev = [

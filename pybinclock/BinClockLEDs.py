@@ -14,6 +14,7 @@ binary matrix. Behaviour is driven entirely by a :class:`~pybinclock.config.Conf
 
 import signal
 import sys
+import threading
 from time import sleep
 from typing import Any, Dict, List, Optional, Tuple, Union
 
@@ -31,9 +32,6 @@ except ImportError:
 
 from pybinclock.PyBinClock import CurrentTime
 from pybinclock.config import Config
-
-# Global handle to the active controller, used by the signal handler.
-controller: Optional["LEDController"] = None
 
 
 class MockHAT:
@@ -94,6 +92,8 @@ class LEDController:
         self.mode = "binclock"
         self.exit = False
         self.last_time_update: Dict[str, List[int]] = {}
+        # Button callbacks run on gpiozero's thread; serialize display writes.
+        self._lock = threading.RLock()
 
         # Initialize hardware (sets self.hat, self.buttons, width/height)
         self._init_hardware()
@@ -189,16 +189,17 @@ class LEDController:
     def draw(self) -> None:
         """Render the current field (plus status pixels) to the display."""
         try:
-            for s in self.status:
-                x, y, color = self.status[s]
-                if 0 <= x < self.width and 0 <= y < self.height:
-                    self.field[y][x] = color
+            with self._lock:
+                for s in self.status:
+                    x, y, color = self.status[s]
+                    if 0 <= x < self.width and 0 <= y < self.height:
+                        self.field[y][x] = color
 
-            for y, row in enumerate(self.field):
-                for x, rgb in enumerate(row):
-                    self.hat.set_pixel(x, y, *rgb)
+                for y, row in enumerate(self.field):
+                    for x, rgb in enumerate(row):
+                        self.hat.set_pixel(x, y, *rgb)
 
-            self.hat.show()
+                self.hat.show()
 
         except Exception as e:
             logger.error(f"Error updating display: {e}")
@@ -223,7 +224,7 @@ class LEDController:
             self.set_status("mode", self.config.colors.status_info)
         else:
             self.mode = "binclock"
-            self.set_status("mode", self.config.colors.status_warn)
+            self.set_status("mode", self.config.colors.status_okay)
         logger.info(f"Mode changed to: {self.mode}")
 
     def set_exit(self) -> None:
@@ -231,13 +232,18 @@ class LEDController:
         self.exit = True
         logger.info("Exit requested")
 
-    def write_text(self, text: str, color: List[int]) -> None:
+    def write_text(
+        self, text: str, color: List[int], interruptible: bool = True
+    ) -> None:
         """
         Scroll text across the display.
 
         Args:
             text: Text to display
             color: RGB color for the text
+            interruptible: When True, stop scrolling as soon as the mode leaves
+                ``scrollclock`` or exit is requested. Pass False for messages
+                that must play out in full (e.g. the shutdown notice).
         """
         try:
             font = ImageFont.truetype(self.config.font_path, 8)
@@ -251,20 +257,24 @@ class LEDController:
             offset_x = 0
 
             while offset_x + self.width <= image.size[0]:
-                if self.mode != "scrollclock" or self.exit:
+                if interruptible and (self.mode != "scrollclock" or self.exit):
                     break
 
-                for y in range(self.height):
-                    for x in range(self.width):
-                        if image.getpixel((x + offset_x, y)) == 255:
-                            self.hat.set_pixel(x, y, *color)
-                        else:
-                            self.hat.set_pixel(x, y, 0, 0, 0)
+                # Freeze the scroll in place while paused.
+                if interruptible and self.paused:
+                    sleep(0.1)
+                    continue
 
-                if not self.paused:
+                with self._lock:
+                    for y in range(self.height):
+                        for x in range(self.width):
+                            if image.getpixel((x + offset_x, y)) == 255:
+                                self.hat.set_pixel(x, y, *color)
+                            else:
+                                self.hat.set_pixel(x, y, 0, 0, 0)
                     self.hat.show()
-                    sleep(0.05)
 
+                sleep(0.05)
                 offset_x += 1
 
         except Exception as e:
@@ -296,7 +306,7 @@ class LEDController:
 
             # Right-align the bits (little-endian, LSB at the far right).
             for offset, bit in enumerate(reversed(binary_data)):
-                x = 16 - offset
+                x = self.width - 1 - offset
                 if 0 <= x < self.width:
                     self.field[row][x] = (
                         self.config.colors.on_color
@@ -306,10 +316,12 @@ class LEDController:
 
 
 def signal_handler(signum: int, frame: Any) -> None:
-    """Handle shutdown signals gracefully."""
+    """Handle shutdown signals by unwinding the main loop.
+
+    Raising ``SystemExit`` lets the controller's context manager clear the
+    display and release the buttons exactly once.
+    """
     logger.info(f"Received signal {signum}, shutting down gracefully...")
-    if controller is not None:
-        controller.cleanup()
     sys.exit(0)
 
 
@@ -322,9 +334,6 @@ def BinClockLEDs(config_path: Optional[str] = None) -> None:
         config_path: Optional path to a configuration file. When ``None`` the
             standard config search locations are used.
     """
-    global controller
-    controller = None
-
     # Load configuration
     config = Config.load(config_path)
 
@@ -344,7 +353,11 @@ def BinClockLEDs(config_path: Optional[str] = None) -> None:
             while True:
                 if controller.exit:
                     logger.info("Exit requested, shutting down")
-                    controller.write_text("Shutting down!", config.colors.status_okay)
+                    controller.write_text(
+                        "Shutting down!",
+                        config.colors.status_okay,
+                        interruptible=False,
+                    )
                     break
 
                 if controller.paused:
@@ -352,6 +365,7 @@ def BinClockLEDs(config_path: Optional[str] = None) -> None:
                     continue
 
                 if controller.mode == "scrollclock":
+                    ct.update()
                     controller.write_text(
                         ct.now.replace(microsecond=0).isoformat(),
                         config.colors.status_okay,
@@ -369,12 +383,6 @@ def BinClockLEDs(config_path: Optional[str] = None) -> None:
 
     except KeyboardInterrupt:
         logger.info("Keyboard interrupt received, shutting down")
-    except Exception as e:
-        logger.error(f"Fatal error: {e}")
-        raise
-    finally:
-        if controller is not None:
-            controller.cleanup()
 
 
 if __name__ == "__main__":

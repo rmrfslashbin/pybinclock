@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 """Unit tests for the unified LED controller."""
 
+import importlib
 from unittest.mock import Mock, patch
+
+import pytest
 
 from pybinclock.config import Config
 from pybinclock.PyBinClock import CurrentTime
@@ -157,8 +160,10 @@ class TestLEDControllerRealHardwarePath:
     """Test the hardware code path with the hardware libraries patched out."""
 
     @patch("pybinclock.BinClockLEDs.HARDWARE_AVAILABLE", True)
-    @patch("pybinclock.BinClockLEDs.Button")
-    @patch("pybinclock.BinClockLEDs.UnicornHATMini")
+    # create=True: off-Pi the hardware libraries are absent, so these names
+    # do not exist in the module until patched in.
+    @patch("pybinclock.BinClockLEDs.Button", create=True)
+    @patch("pybinclock.BinClockLEDs.UnicornHATMini", create=True)
     def test_hardware_initialization_with_buttons(self, mock_hat_class, mock_button):
         """Real hardware path wires the HAT and the four buttons."""
         from pybinclock.BinClockLEDs import LEDController
@@ -176,3 +181,93 @@ class TestLEDControllerRealHardwarePath:
         assert mock_button.call_count == 4
         called_pins = {call.args[0] for call in mock_button.call_args_list}
         assert called_pins == {5, 6, 16, 24}
+
+
+class TestScrollAndShutdown:
+    """Scrolling-text behaviour, including the shutdown message."""
+
+    @pytest.fixture
+    def controller(self, monkeypatch):
+        """A mock-hardware controller with the repo font and no real sleeps."""
+        from pathlib import Path
+
+        mod = importlib.import_module("pybinclock.BinClockLEDs")
+        monkeypatch.setattr(mod, "HARDWARE_AVAILABLE", False)
+        monkeypatch.setattr(mod, "sleep", lambda _s: None)
+        config = Config()
+        config.font_path = str(Path(__file__).parent.parent / "5x7.ttf")
+        return mod.LEDController(config)
+
+    def test_shutdown_message_plays_in_binclock_mode(self, controller):
+        """Non-interruptible text scrolls even outside scrollclock mode."""
+        shows = []
+        controller.hat.show = lambda: shows.append(1)
+        controller.exit = True
+        controller.write_text("Bye", [0, 255, 0], interruptible=False)
+        assert len(shows) > 1
+
+    def test_interruptible_text_stops_outside_scrollclock(self, controller):
+        """Default text scrolling aborts when the mode is not scrollclock."""
+        shows = []
+        controller.hat.show = lambda: shows.append(1)
+        controller.write_text("Hello", [0, 255, 0])
+        assert shows == []
+
+    def test_toggle_mode_restores_okay_status(self, controller):
+        """Returning to binclock uses the same mode color it started with."""
+        initial = list(controller.status["mode"][2])
+        controller.toggle_mode()
+        controller.toggle_mode()
+        assert controller.status["mode"][2] == initial
+
+
+class TestMainLoop:
+    """The BinClockLEDs entry point."""
+
+    @patch("pybinclock.BinClockLEDs.HARDWARE_AVAILABLE", False)
+    def test_scrollclock_shows_current_time(self, monkeypatch, tmp_path):
+        """Scroll mode refreshes the time instead of repeating the start time."""
+        import json
+        from pathlib import Path
+
+        mod = importlib.import_module("pybinclock.BinClockLEDs")
+        cfg = tmp_path / "config.json"
+        cfg.write_text(
+            json.dumps(
+                {
+                    "enable_buttons": False,
+                    "font_path": str(Path(__file__).parent.parent / "5x7.ttf"),
+                }
+            )
+        )
+        texts = []
+        updates = []
+        real_update = CurrentTime.update
+
+        def counting_update(self):
+            updates.append(1)
+            real_update(self)
+
+        def fake_write_text(self, text, color, interruptible=True):
+            texts.append(text)
+            if len(texts) >= 2:
+                self.exit = True
+                self.mode = "binclock"
+
+        monkeypatch.setattr(CurrentTime, "update", counting_update)
+        monkeypatch.setattr(mod.LEDController, "write_text", fake_write_text)
+        monkeypatch.setattr(mod, "sleep", lambda _s: None)
+        monkeypatch.setattr(mod.signal, "signal", lambda *_a: None)
+        # Start the controller in scroll mode.
+        real_reset = mod.LEDController.reset
+
+        def reset_into_scroll(self):
+            real_reset(self)
+            self.mode = "scrollclock"
+
+        monkeypatch.setattr(mod.LEDController, "reset", reset_into_scroll)
+
+        mod.BinClockLEDs(str(cfg))
+
+        # One update in CurrentTime() plus one per scroll iteration.
+        assert len(updates) >= 3

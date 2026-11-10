@@ -232,3 +232,60 @@ class TestConfig:
 
         finally:
             Path(temp_path).unlink()
+
+    def test_partial_failure_falls_back_to_full_defaults(self, tmp_path):
+        """A later invalid section must not leave earlier sections applied."""
+        path = tmp_path / "config.json"
+        path.write_text(
+            json.dumps(
+                {
+                    "display": {"rotation": 90},
+                    "colors": {"on_color": [999, 0, 0]},  # invalid
+                }
+            )
+        )
+        config = Config.load(str(path))
+        assert config.display.rotation == 180  # not the half-applied 90
+        assert config.colors.on_color == [255, 0, 0]
+
+    def test_enable_buttons_must_be_bool(self, tmp_path):
+        """A quoted "false" is truthy; reject it rather than enable buttons."""
+        path = tmp_path / "config.json"
+        path.write_text(json.dumps({"enable_buttons": "false"}))
+        config = Config.load(str(path))
+        assert config.enable_buttons is True  # defaults, with an error logged
+
+    @pytest.mark.parametrize(
+        "theme", sorted((Path(__file__).parent.parent / "themes").glob("*.json"))
+    )
+    def test_themes_load_headless(self, theme):
+        """Shipped themes load cleanly and keep the service headless."""
+        config = Config.load(str(theme))
+        assert config.enable_buttons is False
+
+    def test_sample_config_matches_create_sample_config(self, tmp_path):
+        """sample_config.json stays in sync with create_sample_config()."""
+        generated = tmp_path / "sample.json"
+        Config().create_sample_config(str(generated))
+        repo_sample = Path(__file__).parent.parent / "sample_config.json"
+        assert json.loads(generated.read_text()) == json.loads(repo_sample.read_text())
+
+
+class TestColorValidation:
+    """ColorScheme rejects values the LED driver cannot render."""
+
+    @pytest.mark.parametrize(
+        "bad",
+        [
+            [256, 0, 0],
+            [-1, 0, 0],
+            [0, 0],
+            [0, 0, 0, 0],
+            [0.5, 0, 0],
+            "red",
+            [True, 0, 0],
+        ],
+    )
+    def test_invalid_colors_rejected(self, bad):
+        with pytest.raises(ValueError):
+            ColorScheme(on_color=bad)

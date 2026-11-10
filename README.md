@@ -72,7 +72,7 @@ The setup script will:
 ```bash
 git clone https://github.com/rmrfslashbin/pybinclock.git
 cd pybinclock
-uv sync --extra dev
+uv sync          # includes the dev dependency group; hardware libs are Pi-only
 ```
 
 ### Service Control
@@ -195,7 +195,8 @@ sudo systemctl restart pybinclock
 ```
 
 Available: `blue_theme.json`, `green_theme.json`, `amber_theme.json`,
-`purple_theme.json`.
+`purple_theme.json`. Each sets `"enable_buttons": false` to match the headless
+service; set it to `true` if you have buttons wired.
 
 ## Development
 
