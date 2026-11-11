@@ -674,7 +674,7 @@ wheels = [
 
 [[package]]
 name = "pybinclock"
-version = "0.2.0"
+version = "0.2.1"
 source = { editable = "." }
 dependencies = [
     { name = "gpiozero", marker = "platform_machine in 'aarch64 armv7l armv6l' and sys_platform == 'linux'" },
