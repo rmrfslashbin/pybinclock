@@ -16,7 +16,7 @@ import signal
 import sys
 import threading
 from pathlib import Path
-from time import sleep
+from time import sleep, time
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 from loguru import logger
@@ -359,6 +359,32 @@ def _fatal(_exc: BaseException) -> None:
     sys.exit(1)
 
 
+# How far past each tick to wake. Waking a hair after the boundary means
+# ``ct.update()`` reads the new second rather than the tail of the old one.
+TICK_GUARD_SECONDS = 0.005
+
+
+def seconds_until_next_tick(period: float, now: Optional[float] = None) -> float:
+    """
+    Seconds to sleep so the next frame lands just after a wall-clock boundary.
+
+    A flat ``sleep(period)`` after drawing adds the render time to every pass,
+    so the frame drifts against the second and the display shows a second that
+    began up to a whole period ago
+    (ISSUE code.rmrfslashbin.net/rmrfslashbin/pybinclock#12).
+    Sleeping to the next multiple of ``period`` on the epoch keeps each frame
+    within a few milliseconds of the second it shows.
+
+    Args:
+        period: The refresh period in seconds (``display.refresh_rate``).
+        now: The current epoch time; defaults to ``time.time()``.
+    """
+    if now is None:
+        now = time()
+    remaining = period - (now % period)
+    return remaining + TICK_GUARD_SECONDS
+
+
 # onerror: log the traceback once, then exit 1 so systemd sees a failure
 # (plain @logger.catch swallows the exception and the process exits 0).
 @logger.catch(onerror=_fatal)
@@ -429,7 +455,7 @@ def BinClockLEDs(config_path: Optional[str] = None) -> None:
                 controller.update_binary_display(ct)
                 controller.draw()
 
-                sleep(config.display.refresh_rate)
+                sleep(seconds_until_next_tick(config.display.refresh_rate))
 
     except KeyboardInterrupt:
         logger.info("Keyboard interrupt received, shutting down")

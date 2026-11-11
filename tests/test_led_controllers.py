@@ -362,3 +362,36 @@ class TestRequireHardware:
         assert Config().require_hardware is True
         monkeypatch.setattr(config_mod.platform, "machine", lambda: "x86_64")
         assert Config().require_hardware is False
+
+
+class TestTickAlignment:
+    """The frame lands just after the second it shows (pybinclock#12)."""
+
+    def test_sleeps_to_next_boundary(self):
+        mod = importlib.import_module("pybinclock.BinClockLEDs")
+        guard = mod.TICK_GUARD_SECONDS
+        assert mod.seconds_until_next_tick(1.0, now=100.25) == pytest.approx(
+            0.75 + guard
+        )
+        assert mod.seconds_until_next_tick(1.0, now=100.999) == pytest.approx(
+            0.001 + guard
+        )
+
+    def test_on_boundary_waits_a_full_period(self):
+        mod = importlib.import_module("pybinclock.BinClockLEDs")
+        assert mod.seconds_until_next_tick(1.0, now=100.0) == pytest.approx(
+            1.0 + mod.TICK_GUARD_SECONDS
+        )
+
+    def test_sub_second_period(self):
+        mod = importlib.import_module("pybinclock.BinClockLEDs")
+        assert mod.seconds_until_next_tick(0.5, now=100.3) == pytest.approx(
+            0.2 + mod.TICK_GUARD_SECONDS
+        )
+
+    def test_wake_time_is_just_past_a_boundary(self):
+        """However late the pass ends, the wake-up lands guard-past a tick."""
+        mod = importlib.import_module("pybinclock.BinClockLEDs")
+        for now in (7.0, 7.01, 7.4, 7.73, 7.9999):
+            wake = now + mod.seconds_until_next_tick(1.0, now=now)
+            assert wake % 1.0 == pytest.approx(mod.TICK_GUARD_SECONDS, abs=1e-6)
